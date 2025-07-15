@@ -1,8 +1,28 @@
 from flask import Flask, render_template, request
-import pandas as pd
+import psycopg2
 import os
 
 app = Flask(__name__)
+
+# ✅ Get the DATABASE_URL from environment variable
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+# ✅ Initialize PostgreSQL DB
+def init_db():
+    conn = psycopg2.connect(DATABASE_URL)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS students (
+            id SERIAL PRIMARY KEY,
+            name TEXT,
+            marks REAL,
+            result TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+init_db()
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -13,30 +33,32 @@ def index():
     fail_count = 0
 
     if request.method == "POST":
+        conn = psycopg2.connect(DATABASE_URL)
+        cursor = conn.cursor()
+
         for i in range(1, 4):
             name = request.form.get(f"name{i}")
             marks = float(request.form.get(f"marks{i}"))
             result = "Pass" if marks >= 35 else "Fail"
 
-            students.append({
-                "name": name,
-                "marks": marks,
-                "result": result
-            })
+            students.append({"name": name, "marks": marks, "result": result})
+
+            # ✅ Insert into PostgreSQL
+            cursor.execute(
+                "INSERT INTO students (name, marks, result) VALUES (%s, %s, %s)",
+                (name, marks, result)
+            )
 
             if result == "Pass":
                 pass_count += 1
             else:
                 fail_count += 1
 
+        conn.commit()
+        conn.close()
+
         average = round(sum(s['marks'] for s in students) / len(students), 2)
         topper = max(students, key=lambda s: s["marks"])
-
-        # ✅ Save to CSV
-        df = pd.DataFrame(students)
-        file_path = "student_data.csv"
-        write_header = not os.path.exists(file_path)
-        df.to_csv(file_path, mode='a', header=write_header, index=False)
 
     return render_template("index.html",
                            students=students,
