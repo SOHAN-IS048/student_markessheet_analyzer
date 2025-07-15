@@ -7,7 +7,7 @@ app = Flask(__name__)
 # ✅ Get the DATABASE_URL from environment variable
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# ✅ Initialize PostgreSQL DB
+# ✅ Initialize PostgreSQL DB (only once)
 def init_db():
     conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
@@ -24,6 +24,7 @@ def init_db():
 
 init_db()
 
+# ✅ Home page – data entry
 @app.route("/", methods=["GET", "POST"])
 def index():
     students = []
@@ -43,7 +44,6 @@ def index():
 
             students.append({"name": name, "marks": marks, "result": result})
 
-            # ✅ Insert into PostgreSQL
             cursor.execute(
                 "INSERT INTO students (name, marks, result) VALUES (%s, %s, %s)",
                 (name, marks, result)
@@ -66,6 +66,16 @@ def index():
                            topper=topper,
                            pass_count=pass_count,
                            fail_count=fail_count)
+
+# ✅ View page – show all stored records
+@app.route("/view")
+def view():
+    conn = psycopg2.connect(DATABASE_URL)
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, marks, result FROM students")
+    rows = cursor.fetchall()
+    conn.close()
+    return render_template("view.html", rows=rows)
 
 if __name__ == "__main__":
     app.run(debug=True)
