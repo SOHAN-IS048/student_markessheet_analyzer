@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Marksheet Analyzer</title>
+</head>
+<body>
+    <h1>Student Marksheet Analyzer</h1>
+    <form method="POST">
+        {% for i in range(1, 4) %}
+            <label>Student {{ i }} Name:</label>
+            <input type="text" name="name{{ i }}" required>
+            <label>Marks:</label>
+            <input type="number" name="marks{{ i }}" min="0" max="100" required><br><br>
+        {% endfor %}
+        <input type="submit" value="Analyze">
+    </form>
+
+    {% if students %}
+        <h2>Results:</h2>
+        <ul>
+            {% for s in students %}
+                <li>{{ s.name }} - {{ s.marks }} - {{ s.result }}</li>
+            {% endfor %}
+        </ul>
+        <p><strong>Class Average:</strong> {{ average }}</p>
+        <p><strong>Topper:</strong> {{ topper.name }} ({{ topper.marks }})</p>
+        <p><strong>Pass Count:</strong> {{ pass_count }}</p>
+        <p><strong>Fail Count:</strong> {{ fail_count }}</p>
+    {% endif %}
+</body>
+</html>
